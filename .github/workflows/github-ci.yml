@@ -92,7 +92,7 @@ jobs:
 
       - name: Terragrunt plan on terraform/
         run: |
-          terragrunt run-all plan --terragrunt-filter-affected --terragrunt-non-interactive || (echo "Terraform files are not planned correctly" && exit 1)
+          terragrunt run-all plan  --terragrunt-non-interactive || (echo "Terraform files are not planned correctly" && exit 1)
   terraform-apply:
     runs-on: self-hosted
     needs: terraform-plan
