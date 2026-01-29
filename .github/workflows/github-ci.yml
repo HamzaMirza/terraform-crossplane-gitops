@@ -125,7 +125,7 @@ jobs:
       - name: Terragrunt apply on terraform/
         run: |
           echo "Applying Terraform files"
-          terragrunt run-all apply --filter-affected --terragrunt-non-interactive -auto-approve || (echo "Terraform files are not applied correctly" && exit 1)
+          terragrunt run-all apply --terragrunt-non-interactive -auto-approve || (echo "Terraform files are not applied correctly" && exit 1)
 
       - name: Terraform output
         run: |
