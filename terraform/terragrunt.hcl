@@ -15,9 +15,9 @@ generate "variables" {
 }
 
 generate "backend" {
-  path = "generated_backend.tf"
+  path      = "generated_backend.tf"
   if_exists = "overwrite_terragrunt"
-  contents = <<EOF
+  contents  = <<EOF
   terraform {
     backend "http" {
       address        = "https://api.tfstate.dev/github/v1"
