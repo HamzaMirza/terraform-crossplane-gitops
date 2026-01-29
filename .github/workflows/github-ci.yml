@@ -8,54 +8,58 @@ on:
     branches:
       - main
   workflow_dispatch: #for manual triggering
-  inputs:
-    terraform:
-      description: "Run Terraform Apply"
-      required: true
-      type: string
+    inputs:
+      terraform:
+        description: "Run Terraform Apply"
+        required: true
+        type: string
 
 jobs:
   detect-changes:
     runs-on: self-hosted
     steps:
       - name: Checkout code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
         with:
           fetch-depth: 3
 
       - name: Determine change folders
         id: detect-changes
         run: |
-        if [[ "${{ github.event_name }}" == "pull_request" ]]; then
-        BASE_SHA="${{ github.event.pull_request.base.sha }}"
-        HEAD_SHA="${{ github.event.pull_request.head.sha }}"
-        else
-        BASE_SHA="${{ github.event.before }}"
-        HEAD_SHA="${{ github.event.after }}"
-        fi
-        echo "Comparing ${BASE_SHA} to ${HEAD_SHA}"
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            # shellcheck disable=SC2086
+            BASE_SHA="${{ github.event.pull_request.base.sha }}"
+            # shellcheck disable=SC2086
+            HEAD_SHA="${{ github.event.pull_request.head.sha }}"
+          else
+            # shellcheck disable=SC2086
+            BASE_SHA="${{ github.event.before }}"
+            # shellcheck disable=SC2086
+            HEAD_SHA="${{ github.event.after }}"
+          fi
+          echo "Comparing \"${BASE_SHA}\" to \"${HEAD_SHA}\""
 
-        if git diff --name-only ${BASE_SHA} ${HEAD_SHA} | grep -q "terraform/"; then
-          echo "Changes detected in terraform/"
-          echo "terraform=true" >> $GITHUB_OUTPUT
-        else
-          echo "No changes detected in terraform/"
-          echo "terraform=false" >> $GITHUB_OUTPUT
-        fi
+          if git diff --name-only "${BASE_SHA}" "${HEAD_SHA}" | grep -q "terraform/"; then
+            echo "Changes detected in terraform/"
+            echo "terraform=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "No changes detected in terraform/"
+            echo "terraform=false" >> "$GITHUB_OUTPUT"
+          fi
 
-        if git diff --name-only ${BASE_SHA} ${HEAD_SHA} | grep -q "crossplane/"; then
-          echo "Changes detected in crossplane/"
-          echo "crossplane=true" >> $GITHUB_OUTPUT
-        else
-          echo "No changes detected in crossplane/"
-          echo "crossplane=false" >> $GITHUB_OUTPUT
-        fi
+          if git diff --name-only "${BASE_SHA}" "${HEAD_SHA}" | grep -q "crossplane/"; then
+            echo "Changes detected in crossplane/"
+            echo "crossplane=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "No changes detected in crossplane/"
+            echo "crossplane=false" >> "$GITHUB_OUTPUT"
+          fi
   terraform-plan:
     runs-on: self-hosted
     needs: detect-changes
     steps:
       - name: Checkout code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
         with:
           fetch-depth: 3
 
@@ -65,39 +69,39 @@ jobs:
           terraform_version: 1.13.0
       - name: Install Terragrunt
         run: | 
-        #detect architecture
-        ARCH=$(uname -m)
-        if [ "$ARCH" == "x86_64" ]; then
-          ARCH="amd64"
-        elif [ "$ARCH" == "aarch64" ]; then
-          ARCH="arm64"
-        else
-          echo "Unsupported architecture: $ARCH"
-          exit 1
-        fi
-        curl -fsSL https://github.com/gruntwork-io/terragrunt/releases/download/v0.50.2/terragrunt_linux_$ARCH -o terragrunt && \
-        chmod +x terragrunt
-        sudo mv terragrunt /usr/local/bin/terragrunt
-        terragrunt --version
+          #detect architecture
+          ARCH=$(uname -m)
+          if [ "$ARCH" == "x86_64" ]; then
+            ARCH="amd64"
+          elif [ "$ARCH" == "aarch64" ]; then
+            ARCH="arm64"
+          else
+            echo "Unsupported architecture: $ARCH"
+            exit 1
+          fi
+          curl -fsSL https://github.com/gruntwork-io/terragrunt/releases/download/v0.50.2/terragrunt_linux_$ARCH -o terragrunt && \
+          chmod +x terragrunt
+          sudo mv terragrunt /usr/local/bin/terragrunt
+          terragrunt --version
 
       - name: Terragrunt format check on terraform/ 
         run: |
-        terragrunt run-all fmt --check -recursive terraform/ || (echo "Terraform files are not formatted correctly" && exit 1)
+          terragrunt run-all fmt --check -recursive terraform/ || (echo "Terraform files are not formatted correctly" && exit 1)
 
       - name: Terragrunt validate on terraform/
         run: |
-        terragrunt run-all validate -recursive terraform/ || (echo "Terraform files are not valid" && exit 1)
+          terragrunt run-all validate -recursive terraform/ || (echo "Terraform files are not valid" && exit 1)
 
       - name: Terragrunt plan on terraform/
         run: |
-        terragrunt run-all plan -recursive terraform/ || (echo "Terraform files are not planned correctly" && exit 1)
+          terragrunt run-all plan -recursive terraform/ || (echo "Terraform files are not planned correctly" && exit 1)
   terraform-apply:
     runs-on: self-hosted
     needs: terraform-plan
-    if: (github.event_name == 'push' && github.ref == 'refs/heads/main') || (github.event_name == 'workflow_dispatch' && inputs.terraform == 'true')
+    if: (github.event_name == 'push' && github.ref == 'refs/heads/main') || (github.event_name == 'workflow_dispatch' && github.event.inputs.terraform == 'true')
     steps:
       - name: Checkout code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
         with:
           fetch-depth: 3
 
@@ -107,27 +111,27 @@ jobs:
           terraform_version: 1.13.0
       - name: Install Terragrunt
         run: | 
-        #detect architecture
-        ARCH=$(uname -m)
-        if [ "$ARCH" == "x86_64" ]; then
-          ARCH="amd64"
-        elif [ "$ARCH" == "aarch64" ]; then
-          ARCH="arm64"
-        else
-          echo "Unsupported architecture: $ARCH"
-          exit 1
-        fi
-        curl -fsSL https://github.com/gruntwork-io/terragrunt/releases/download/v0.50.2/terragrunt_linux_$ARCH -o terragrunt && \
-        chmod +x terragrunt
-        sudo mv terragrunt /usr/local/bin/terragrunt
-        terragrunt --version
+          #detect architecture
+          ARCH=$(uname -m)
+          if [ "$ARCH" == "x86_64" ]; then
+            ARCH="amd64"
+          elif [ "$ARCH" == "aarch64" ]; then
+            ARCH="arm64"
+          else
+            echo "Unsupported architecture: $ARCH"
+            exit 1
+          fi
+          curl -fsSL https://github.com/gruntwork-io/terragrunt/releases/download/v0.50.2/terragrunt_linux_$ARCH -o terragrunt && \
+          chmod +x terragrunt
+          sudo mv terragrunt /usr/local/bin/terragrunt
+          terragrunt --version
 
       - name: Terragrunt apply on terraform/
         run: |
-        echo "Applying Terraform files"
-        terragrunt run-all apply -recursive terraform/ || (echo "Terraform files are not applied correctly" && exit 1)
+          echo "Applying Terraform files"
+          terragrunt run-all apply -recursive terraform/ || (echo "Terraform files are not applied correctly" && exit 1)
 
       - name: Terraform output
         run: |
-        echo "Terraform output"
-        terragrunt run-all output -recursive terraform/ || (echo "Terraform output is not correct" && exit 1)
+          echo "Terraform output"
+          terragrunt run-all output -recursive terraform/ || (echo "Terraform output is not correct" && exit 1)
