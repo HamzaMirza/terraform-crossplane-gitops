@@ -88,11 +88,11 @@ jobs:
 
       - name: Terragrunt validate on terraform/
         run: |
-          terragrunt run-all validate -recursive terraform/ || (echo "Terraform files are not valid" && exit 1)
+          terragrunt run-all validate --terragrunt-working-dir  terraform/ || (echo "Terraform files are not valid" && exit 1)
 
       - name: Terragrunt plan on terraform/
         run: |
-          terragrunt run-all plan -recursive terraform/ || (echo "Terraform files are not planned correctly" && exit 1)
+          terragrunt run-all plan --terragrunt-working-dir terraform/ || (echo "Terraform files are not planned correctly" && exit 1)
   terraform-apply:
     runs-on: self-hosted
     needs: terraform-plan
@@ -125,9 +125,9 @@ jobs:
       - name: Terragrunt apply on terraform/
         run: |
           echo "Applying Terraform files"
-          terragrunt run-all apply -recursive terraform/ || (echo "Terraform files are not applied correctly" && exit 1)
+          terragrunt run-all apply --terragrunt-working-dir terraform/ || (echo "Terraform files are not applied correctly" && exit 1)
 
       - name: Terraform output
         run: |
           echo "Terraform output"
-          terragrunt run-all output -recursive terraform/ || (echo "Terraform output is not correct" && exit 1)
+          terragrunt run-all output --terragrunt-working-dir terraform/ || (echo "Terraform output is not correct" && exit 1)
