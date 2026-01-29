@@ -1,11 +1,8 @@
-include {
-  path = find_in_parent_folders()
-}
 include "provider" {
-  path = "${get_terragrunt_dir()}/../provider.hcl"
+  path = "${get_terragrunt_dir()}/../../provider.hcl"
 }
 terraform {
-  source = "git@github.com:tehcyx/terraform-provider-kind.git?ref=v0.10.0"
+  source = "${get_terragrunt_dir()}/../../modules/kind-cluster"
 }
 locals {
   kubectl_config_path    = "~/.kube/config"
@@ -15,7 +12,7 @@ locals {
   wait_for_ready         = true
   wait_for_ready_timeout = "10m"
   node_port              = 3009
-  workers_count          = 2
+  workers_count          = 1
   control_plane = {
     role = "control-plane"
     extra_port_mappings = [
@@ -27,30 +24,26 @@ locals {
     ]
   }
 
-
-  dynamic "workers" {
-    // Removed redundant 'role = "worker"' here
-    for_each = range(local.workers_count)
-    content {
+  workers = [
+    for idx in range(local.workers_count) : {
       role = "worker"
       kubeadm_config_patches = [<<EOF
-            kind: JoinConfiguration
-            nodeRegistration:
-                kubeletExtraArgs:
-                    // Switched 'worker.key+1' to 'workers.value+1'
-                    node-labels: "node-type=worker,node-index=${workers.value + 1},environment=${local.environment}" 
+        kind: JoinConfiguration
+        nodeRegistration:
+          kubeletExtraArgs:
+            node-labels: "node-type=worker,node-index=${idx + 1},environment=${local.environment}"
 EOF
       ]
     }
-  }
-  nodes = merge(local.control_plane, local.worker)
+  ]
+
+  # kind expects a list of node definitions (control-plane + workers)
+  nodes = concat([local.control_plane], local.workers)
 }
 inputs = {
-  cluster_name           = local.cluster_name
-  node_image             = local.node_image
-  wait_for_ready         = local.wait_for_ready
-  wait_for_ready_timeout = local.wait_for_ready_timeout
-  nodes_count            = length(local.nodes)
-  nodes                  = local.nodes
-  kubectl_config_path    = local.kubectl_config_path
+  cluster_name    = local.cluster_name
+  node_image      = local.node_image
+  wait_for_ready  = local.wait_for_ready
+  kubeconfig_path = local.kubectl_config_path
+  nodes           = local.nodes
 }
