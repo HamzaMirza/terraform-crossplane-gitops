@@ -65,10 +65,14 @@ jobs:
         with:
           fetch-depth: 3
 
-      - name: Set up Terraform
-        uses: hashicorp/setup-terraform@v2
-        with:
-          terraform_version: 1.13.0
+      - name: Verify Terraform is installed
+        run: |
+          if ! command -v terraform &> /dev/null; then
+            echo "Error: Terraform is not installed on this self-hosted runner"
+            echo "Please install Terraform: https://developer.hashicorp.com/terraform/downloads"
+            exit 1
+          fi
+          terraform --version
       - name: Verify Terragrunt is installed
         run: |
           if ! command -v terragrunt &> /dev/null; then
@@ -101,10 +105,14 @@ jobs:
         with:
           fetch-depth: 3
 
-      - name: Set up Terraform
-        uses: hashicorp/setup-terraform@v2
-        with:
-          terraform_version: 1.13.0
+      - name: Verify Terraform is installed
+        run: |
+          if ! command -v terraform &> /dev/null; then
+            echo "Error: Terraform is not installed on this self-hosted runner"
+            echo "Please install Terraform: https://developer.hashicorp.com/terraform/downloads"
+            exit 1
+          fi
+          terraform --version
       - name: Verify Terragrunt is installed
         run: |
           if ! command -v terragrunt &> /dev/null; then
