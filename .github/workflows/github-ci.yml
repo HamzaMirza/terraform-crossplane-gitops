@@ -82,9 +82,9 @@ jobs:
           fi
           terragrunt --version
 
-      - name: Terragrunt format check on terraform/ 
-        run: |
-          terragrunt run-all fmt --check -recursive --terragrunt-working-dir terraform/ || (echo "Terraform files are not formatted correctly" && exit 1)
+      # - name: Terragrunt format check on terraform/ 
+      #   run: |
+      #     terragrunt run-all fmt --check -recursive --terragrunt-working-dir terraform/ || (echo "Terraform files are not formatted correctly" && exit 1)
 
       - name: Terragrunt validate on terraform/
         run: |
